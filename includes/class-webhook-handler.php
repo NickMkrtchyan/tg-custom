@@ -192,11 +192,7 @@ class TGCB_Webhook_Handler
             'persistent' => true
         );
 
-        // Send menu first (if not already set)
-        $intro = get_option('tgcb_msg_menu_header', '👇 <b>Главное меню</b>');
-        $this->telegram->send_message($chat_id, $intro, $menu_keyboard);
-
-        // Then send course buttons
+        // Send welcome message with course buttons
         $this->telegram->send_message($chat_id, $welcome_text, $reply_markup);
     }
 
