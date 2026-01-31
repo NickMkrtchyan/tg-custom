@@ -119,6 +119,9 @@ class TGCB_Webhook_Handler
             $btn_help = get_option('tgcb_btn_help', '❓ Помощь');
             $btn_support = get_option('tgcb_btn_support', '👨‍💻 Поддержка');
 
+            // Debug logging
+            error_log('TGCB Button Click: "' . $message->text . '" | Expected My Courses: "' . $btn_my . '"');
+
             if ($message->text === $btn_all) {
                 $this->handle_start_command($chat_id, $user);
             } elseif ($message->text === $btn_my) {
