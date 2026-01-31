@@ -597,10 +597,14 @@ class TGCB_Webhook_Handler
             $telegram = new TGCB_Telegram_API();
             $course_title = get_the_title($course_id);
 
-            $message = "🎟 <b>" . __('New Invite Link', 'tg-course-bot-pro') . "</b>\n\n";
-            $message .= sprintf(__('Here is your new invite link for <b>%s</b>:', 'tg-course-bot-pro'), $course_title) . "\n";
+            $header = get_option('tgcb_msg_invite_header', '🎟 <b>Новая ссылка-приглашение</b>');
+            $body = get_option('tgcb_msg_invite_body', 'Вот ваша новая ссылка-приглашение для <b>{course}</b>:');
+            $warning = get_option('tgcb_msg_invite_warning', '⚠️ Эта ссылка одноразовая и действует 24 часа.');
+
+            $message = $header . "\n\n";
+            $message .= str_replace('{course}', $course_title, $body) . "\n";
             $message .= $invite_link . "\n\n";
-            $message .= "⚠️ " . __('This link is one-time use only and will expire in 24 hours.', 'tg-course-bot-pro');
+            $message .= $warning;
 
             $telegram->send_message($tg_id, $message);
 
