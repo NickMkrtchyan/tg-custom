@@ -3,7 +3,7 @@
  * Plugin Name: TG Course Bot PRO
  * Plugin URI: https://github.com/NickMkrtchyan/tg-custom
  * Description: Professional Telegram bot for managing course access with payment verification, invite links, and anti-piracy protection
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Nick Mkrtchyan
  * Author URI: https://github.com/NickMkrtchyan
  * License: GPL v2 or later
