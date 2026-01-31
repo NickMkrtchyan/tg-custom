@@ -258,9 +258,9 @@ class TGCB_Webhook_Handler
 
         $keyboard = null;
         if (!empty($buttons)) {
-            $keyboard = json_encode(array(
+            $keyboard = array(
                 'inline_keyboard' => $buttons
-            ));
+            );
         }
 
         $this->telegram->send_message($chat_id, $message, $keyboard);
