@@ -1,0 +1,12 @@
+# Ignore WordPress debug log
+debug.log
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
