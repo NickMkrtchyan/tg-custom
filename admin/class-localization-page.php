@@ -25,6 +25,22 @@ class TGCB_Localization_Page
     {
         add_action('admin_menu', array($this, 'add_menu_page'));
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('update_option_tgcb_msg_menu_header', array($this, 'log_option_update'), 10, 3);
+    }
+
+    /**
+     * Log when options are updated (for debugging)
+     */
+    public function log_option_update($old_value, $value, $option)
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("TGCB Option Updated - {$option}");
+            error_log("Old value: {$old_value}");
+            error_log("New value: {$value}");
+
+            // Force clear options cache
+            wp_cache_delete($option, 'options');
+        }
     }
 
     public function add_menu_page()
@@ -37,6 +53,53 @@ class TGCB_Localization_Page
             'tgcb-localization',
             array($this, 'render_page')
         );
+    }
+
+    /**
+     * Initialize default localization settings
+     * Call this on plugin activation or when settings are missing
+     */
+    public static function initialize_defaults()
+    {
+        $defaults = array(
+            // Language & Navigation
+            'tgcb_msg_menu_header' => '👇 <b>Главное меню</b>',
+            'tgcb_btn_all_courses' => '📚 Все курсы',
+            'tgcb_btn_my_courses' => '👤 Мои курсы',
+            'tgcb_btn_help' => '❓ Помощь',
+            'tgcb_btn_support' => '👨💻 Поддержка',
+
+            // Bot Messages
+            'tgcb_msg_welcome' => "👋 Добро пожаловать, {name}!\n\nПожалуйста, выберите курс из списка:\n\nПосле выбора отправьте скриншот чека об оплате.",
+            'tgcb_msg_no_courses' => 'На данный момент курсы недоступны.',
+            'tgcb_msg_select_course' => "📸 Пожалуйста, отправьте скриншот чека об оплате для:\n{course}",
+            'tgcb_msg_receipt_received' => "✅ Чек получен!\n\nВаш платеж проверяется администратором.\nВы получите ссылку-приглашение после подтверждения.",
+            'tgcb_msg_approved' => "✅ <b>Оплата подтверждена!</b>\n\nВаш доступ к <b>{course}</b> открыт.\n\nНажмите на ссылку ниже, чтобы вступить:\n{link}\n\n⚠️ Эта ссылка одноразовая и действует 24 часа.",
+            'tgcb_msg_rejected' => "❌ <b>Оплата отклонена</b>\n\nК сожалению, ваш платеж не подтвержден.\nПожалуйста, свяжитесь с поддержкой.",
+            'tgcb_msg_banned' => '❌ Вы забанены в этом боте.',
+            'tgcb_msg_already_joined' => '✅ У вас уже есть доступ к этому курсу!',
+            'tgcb_msg_select_first' => '❌ Пожалуйста, сначала выберите курс через /start',
+
+            // My Courses Messages
+            'tgcb_msg_my_courses_empty' => "👤 <b>Мои курсы</b>\n\nВы еще не записались ни на один курс.\nВыберите '📚 Все курсы', чтобы начать!",
+            'tgcb_msg_my_courses_header' => "👤 <b>Мои курсы</b>\n\nУ вас есть доступ к следующим курсам:",
+
+            // Help & Support Messages
+            'tgcb_msg_help' => "❓ <b>Как использовать бота:</b>\n\n1️⃣ Нажмите <b>📚 Все курсы</b>\n2️⃣ Выберите курс\n3️⃣ Отправьте скриншот оплаты\n4️⃣ Ждите подтверждения\n5️⃣ Получите ссылку!\n\nНажмите <b>👤 Мои курсы</b> для просмотра подписок.",
+            'tgcb_msg_support' => "👨💻 <b>Поддержка</b>\n\nЕсли у вас есть вопросы, напишите администратору.",
+
+            // Invite Link Messages
+            'tgcb_msg_invite_header' => '🎟 <b>Новая ссылка-приглашение</b>',
+            'tgcb_msg_invite_body' => 'Вот ваша новая ссылка-приглашение для <b>{course}</b>:',
+            'tgcb_msg_invite_warning' => '⚠️ Эта ссылка одноразовая и действует 24 часа.'
+        );
+
+        foreach ($defaults as $option_name => $default_value) {
+            // Only add if option doesn't exist
+            if (get_option($option_name) === false) {
+                add_option($option_name, $default_value, '', 'yes');
+            }
+        }
     }
 
     public function register_settings()
