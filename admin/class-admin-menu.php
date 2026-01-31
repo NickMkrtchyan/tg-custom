@@ -274,6 +274,12 @@ class TGCB_Admin_Menu
      */
     public function students_page()
     {
+        // Handle CSV export
+        if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
+            $this->export_students_csv();
+            return;
+        }
+
         $students_table = new TGCB_Students_Table();
         $students_table->prepare_items();
 
@@ -287,6 +293,91 @@ class TGCB_Admin_Menu
             </form>
         </div>
         <?php
+    }
+
+    /**
+     * Export students to CSV
+     */
+    private function export_students_csv()
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'tgcb_students';
+
+        // Get filters
+        $status_filter = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+        $course_filter = isset($_GET['course']) ? intval($_GET['course']) : 0;
+
+        // Build WHERE clause
+        $where = array('1=1');
+
+        if ($status_filter === 'active') {
+            $where[] = 'banned = 0';
+        } elseif ($status_filter === 'banned') {
+            $where[] = 'banned = 1';
+        } elseif ($status_filter === 'no_courses') {
+            $where[] = "(courses IS NULL OR courses = '[]' OR courses = '')";
+        }
+
+        if ($course_filter > 0) {
+            $where[] = $wpdb->prepare("courses LIKE %s", '%"' . $course_filter . '"%');
+        }
+
+        $where_clause = implode(' AND ', $where);
+
+        // Get students
+        $students = $wpdb->get_results("SELECT * FROM $table_name WHERE $where_clause ORDER BY last_access DESC");
+
+        // Set headers for CSV download
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=students_export_' . date('Y-m-d_H-i-s') . '.csv');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // Open output stream
+        $output = fopen('php://output', 'w');
+
+        // Add BOM for UTF-8
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // CSV headers
+        fputcsv($output, array(
+            'Telegram ID',
+            'First Name',
+            'Last Name',
+            'Username',
+            'Language',
+            'Courses',
+            'Status',
+            'Joined',
+            'Last Access'
+        ));
+
+        // Add data rows
+        foreach ($students as $student) {
+            $courses_ids = json_decode($student->courses, true);
+            $courses_names = array();
+
+            if (is_array($courses_ids)) {
+                foreach ($courses_ids as $course_id) {
+                    $courses_names[] = get_the_title($course_id);
+                }
+            }
+
+            fputcsv($output, array(
+                $student->tg_id,
+                $student->first_name,
+                $student->last_name,
+                $student->username,
+                $student->language,
+                implode(', ', $courses_names),
+                $student->banned ? 'Banned' : 'Active',
+                mysql2date('Y-m-d H:i', $student->joined_date),
+                mysql2date('Y-m-d H:i', $student->last_access)
+            ));
+        }
+
+        fclose($output);
+        exit;
     }
 
     /**

@@ -245,6 +245,104 @@
             });
         });
 
+        // Remove from Course (inline × button)
+        $(document).on('click', '.tgcb-course-remove', function (e) {
+            e.preventDefault();
+
+            if (!confirm('Remove this user from the course?')) {
+                return;
+            }
+
+            const tgId = $(this).data('tg-id');
+            const courseId = $(this).data('course-id');
+            const btn = $(this);
+
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: tgcbAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'tgcb_kick_from_channel',
+                    nonce: tgcbAdmin.nonce,
+                    tg_id: tgId,
+                    course_id: courseId
+                },
+                success: function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('❌ ' + response.data);
+                        btn.prop('disabled', false);
+                    }
+                },
+                error: function () {
+                    alert('❌ Connection error');
+                    btn.prop('disabled', false);
+                }
+            });
+        });
+
+        // Student Details Modal
+        $(document).on('click', '.tgcb-student-name', function (e) {
+            e.preventDefault();
+
+            const tgId = $(this).data('tg-id');
+
+            // Create modal if it doesn't exist
+            if ($('#tgcb-student-modal').length === 0) {
+                $('body').append(`
+                    <div id="tgcb-student-modal" class="tgcb-modal-overlay">
+                        <div class="tgcb-modal">
+                            <div class="tgcb-modal-header">
+                                <h2>Student Details</h2>
+                                <button class="tgcb-modal-close">×</button>
+                            </div>
+                            <div class="tgcb-modal-body">
+                                <div class="tgcb-loading" style="margin: 40px auto; display: block;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+
+            const modal = $('#tgcb-student-modal');
+            modal.addClass('active');
+
+            // Load student data
+            $.ajax({
+                url: tgcbAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'tgcb_get_student_details',
+                    nonce: tgcbAdmin.nonce,
+                    tg_id: tgId
+                },
+                success: function (response) {
+                    if (response.success) {
+                        modal.find('.tgcb-modal-body').html(response.data.html);
+                    } else {
+                        modal.find('.tgcb-modal-body').html('<p>Error loading student data</p>');
+                    }
+                },
+                error: function () {
+                    modal.find('.tgcb-modal-body').html('<p>Connection error</p>');
+                }
+            });
+        });
+
+        // Close modal
+        $(document).on('click', '.tgcb-modal-close, .tgcb-modal-overlay', function (e) {
+            if (e.target === this) {
+                $('#tgcb-student-modal').removeClass('active');
+            }
+        });
+
+        // Prevent modal close when clicking inside
+        $(document).on('click', '.tgcb-modal', function (e) {
+            e.stopPropagation();
+        });
+
     });
 
 })(jQuery);

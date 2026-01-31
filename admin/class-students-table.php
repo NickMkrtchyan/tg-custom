@@ -171,17 +171,134 @@ class TGCB_Students_Table extends WP_List_Table
         // Handle bulk actions
         $this->process_bulk_action();
 
-        // Get data
-        $total_items = TGCB_Database::get_students_count();
+        // Get filters
+        $status_filter = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+        $course_filter = isset($_GET['course']) ? intval($_GET['course']) : 0;
+
+        // Get data with filters
+        $total_items = $this->get_filtered_count($status_filter, $course_filter);
         $offset = ($current_page - 1) * $per_page;
 
-        $this->items = TGCB_Database::get_all_students($offset, $per_page);
+        $this->items = $this->get_filtered_students($offset, $per_page, $status_filter, $course_filter);
 
         $this->set_pagination_args(array(
             'total_items' => $total_items,
             'per_page' => $per_page,
             'total_pages' => ceil($total_items / $per_page)
         ));
+    }
+
+    /**
+     * Get filtered students count
+     */
+    private function get_filtered_count($status = '', $course = 0)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'tgcb_students';
+
+        $where = array('1=1');
+
+        if ($status === 'active') {
+            $where[] = 'banned = 0';
+        } elseif ($status === 'banned') {
+            $where[] = 'banned = 1';
+        } elseif ($status === 'no_courses') {
+            $where[] = "(courses IS NULL OR courses = '[]' OR courses = '')";
+        }
+
+        if ($course > 0) {
+            $where[] = $wpdb->prepare("courses LIKE %s", '%"' . $course . '"%');
+        }
+
+        $where_clause = implode(' AND ', $where);
+
+        return $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE $where_clause");
+    }
+
+    /**
+     * Get filtered students
+     */
+    private function get_filtered_students($offset, $limit, $status = '', $course = 0)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'tgcb_students';
+
+        $where = array('1=1');
+
+        if ($status === 'active') {
+            $where[] = 'banned = 0';
+        } elseif ($status === 'banned') {
+            $where[] = 'banned = 1';
+        } elseif ($status === 'no_courses') {
+            $where[] = "(courses IS NULL OR courses = '[]' OR courses = '')";
+        }
+
+        if ($course > 0) {
+            $where[] = $wpdb->prepare("courses LIKE %s", '%"' . $course . '"%');
+        }
+
+        $where_clause = implode(' AND ', $where);
+
+        return $wpdb->get_results(
+            "SELECT * FROM $table_name WHERE $where_clause ORDER BY last_access DESC LIMIT $offset, $limit"
+        );
+    }
+
+    /**
+     * Display filter bar
+     */
+    public function extra_tablenav($which)
+    {
+        if ($which !== 'top') {
+            return;
+        }
+
+        $current_status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
+        $current_course = isset($_GET['course']) ? intval($_GET['course']) : 0;
+
+        // Get all courses for dropdown
+        $courses = get_posts(array(
+            'post_type' => 'tgcb_course',
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ));
+
+        ?>
+        <div class="alignleft actions">
+            <select name="status" id="filter-by-status">
+                <option value=""><?php _e('All Statuses', 'tg-course-bot-pro'); ?></option>
+                <option value="active" <?php selected($current_status, 'active'); ?>>
+                    <?php _e('Active Only', 'tg-course-bot-pro'); ?></option>
+                <option value="banned" <?php selected($current_status, 'banned'); ?>>
+                    <?php _e('Banned Only', 'tg-course-bot-pro'); ?></option>
+                <option value="no_courses" <?php selected($current_status, 'no_courses'); ?>>
+                    <?php _e('No Courses', 'tg-course-bot-pro'); ?></option>
+            </select>
+
+            <select name="course" id="filter-by-course">
+                <option value="0"><?php _e('All Courses', 'tg-course-bot-pro'); ?></option>
+                <?php foreach ($courses as $course): ?>
+                    <option value="<?php echo esc_attr($course->ID); ?>" <?php selected($current_course, $course->ID); ?>>
+                        <?php echo esc_html($course->post_title); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
+            <?php submit_button(__('Filter', 'tg-course-bot-pro'), 'secondary', 'filter_action', false); ?>
+
+            <?php if ($current_status || $current_course): ?>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=tgcb-students')); ?>" class="button">
+                    <?php _e('Reset', 'tg-course-bot-pro'); ?>
+                </a>
+            <?php endif; ?>
+
+            <a href="<?php echo esc_url(admin_url('admin.php?page=tgcb-students&action=export_csv')); ?>"
+                class="button button-primary" style="margin-left: 10px;">
+                📊 <?php _e('Export CSV', 'tg-course-bot-pro'); ?>
+            </a>
+        </div>
+        <?php
     }
 
     /**

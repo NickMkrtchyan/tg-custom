@@ -67,7 +67,11 @@ class TGCB_Localization_Page
         );
 
         foreach ($settings as $setting) {
-            register_setting('tgcb_localization_group', $setting, 'wp_kses_post');
+            register_setting('tgcb_localization_group', $setting, array(
+                'type' => 'string',
+                'sanitize_callback' => 'wp_kses_post',
+                'default' => ''
+            ));
         }
     }
 

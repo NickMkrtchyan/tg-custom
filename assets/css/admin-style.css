@@ -205,7 +205,7 @@
     .tgcb-stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .tgcb-actions-grid {
         grid-template-columns: 1fr;
     }
@@ -231,4 +231,162 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Student Modal */
+.tgcb-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+}
+
+.tgcb-modal-overlay.active {
+    display: flex;
+}
+
+.tgcb-modal {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tgcb-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tgcb-modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.tgcb-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+}
+
+.tgcb-modal-close:hover {
+    color: #000;
+}
+
+.tgcb-modal-body {
+    padding: 20px;
+}
+
+.tgcb-modal-section {
+    margin-bottom: 25px;
+}
+
+.tgcb-modal-section h3 {
+    margin: 0 0 15px;
+    font-size: 18px;
+    color: #333;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 8px;
+}
+
+.tgcb-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.tgcb-info-item {
+    background: #f7f7f7;
+    padding: 12px;
+    border-radius: 4px;
+}
+
+.tgcb-info-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.tgcb-info-value {
+    font-size: 16px;
+    color: #333;
+}
+
+.tgcb-course-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tgcb-course-item {
+    background: #f7f7f7;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tgcb-course-name {
+    font-weight: 600;
+}
+
+.tgcb-course-date {
+    color: #666;
+    font-size: 13px;
+}
+
+/* Enhanced Course Column */
+.tgcb-course-tag {
+    display: inline-block;
+    background: #e7f3ff;
+    border: 1px solid #0073aa;
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.tgcb-course-remove {
+    background: none;
+    border: none;
+    color: #d63638;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.tgcb-course-remove:hover {
+    color: #a00;
+}
+
+.tgcb-student-name {
+    cursor: pointer;
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.tgcb-student-name:hover {
+    text-decoration: underline;
 }

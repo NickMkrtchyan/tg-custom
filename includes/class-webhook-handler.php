@@ -31,6 +31,7 @@ class TGCB_Webhook_Handler
         add_action('wp_ajax_tgcb_reject_payment', array($this, 'ajax_reject_payment'));
         add_action('wp_ajax_tgcb_resend_invite', array($this, 'ajax_resend_invite'));
         add_action('wp_ajax_tgcb_kick_from_channel', array($this, 'ajax_kick_from_channel'));
+        add_action('wp_ajax_tgcb_get_student_details', array($this, 'ajax_get_student_details'));
     }
 
     /**
@@ -666,5 +667,103 @@ class TGCB_Webhook_Handler
 
         $course_title = get_the_title($course_id);
         wp_send_json_success(sprintf('User removed from "%s"', $course_title));
+    }
+
+    /**
+     * AJAX: Get student details for modal
+     */
+    public function ajax_get_student_details()
+    {
+        check_ajax_referer('tgcb_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $tg_id = sanitize_text_field($_POST['tg_id'] ?? '');
+
+        if (!$tg_id) {
+            wp_send_json_error('Missing TG ID');
+        }
+
+        $student = TGCB_Database::get_student($tg_id);
+
+        if (!$student) {
+            wp_send_json_error('Student not found');
+        }
+
+        // Build HTML
+        $html = '<div class="tgcb-modal-section">';
+        $html .= '<h3>' . __('Profile Information', 'tg-course-bot-pro') . '</h3>';
+        $html .= '<div class="tgcb-info-grid">';
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Telegram ID', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value"><code>' . esc_html($student->tg_id) . '</code></div>';
+        $html .= '</div>';
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Full Name', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value">' . esc_html($student->first_name . ' ' . $student->last_name) . '</div>';
+        $html .= '</div>';
+
+        if ($student->username) {
+            $html .= '<div class="tgcb-info-item">';
+            $html .= '<div class="tgcb-info-label">' . __('Username', 'tg-course-bot-pro') . '</div>';
+            $html .= '<div class="tgcb-info-value">@' . esc_html($student->username) . '</div>';
+            $html .= '</div>';
+        }
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Language', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value">' . esc_html(strtoupper($student->language)) . '</div>';
+        $html .= '</div>';
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Status', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value">';
+        if ($student->banned) {
+            $html .= '<span class="tgcb-status-badge tgcb-status-error">🚫 Banned</span>';
+        } else {
+            $html .= '<span class="tgcb-status-badge tgcb-status-success">✅ Active</span>';
+        }
+        $html .= '</div></div>';
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Joined', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value">' . esc_html(mysql2date('Y-m-d H:i', $student->joined_date)) . '</div>';
+        $html .= '</div>';
+
+        $html .= '<div class="tgcb-info-item">';
+        $html .= '<div class="tgcb-info-label">' . __('Last Access', 'tg-course-bot-pro') . '</div>';
+        $html .= '<div class="tgcb-info-value">' . esc_html(mysql2date('Y-m-d H:i', $student->last_access)) . '</div>';
+        $html .= '</div>';
+
+        $html .= '</div></div>';
+
+        // Courses section
+        $html .= '<div class="tgcb-modal-section">';
+        $html .= '<h3>' . __('Enrolled Courses', 'tg-course-bot-pro') . '</h3>';
+
+        $courses = json_decode($student->courses, true);
+
+        if (empty($courses)) {
+            $html .= '<p><em>' . __('No courses enrolled', 'tg-course-bot-pro') . '</em></p>';
+        } else {
+            $html .= '<ul class="tgcb-course-list">';
+            foreach ($courses as $course_id) {
+                $course_title = get_the_title($course_id);
+                if ($course_title) {
+                    $html .= '<li class="tgcb-course-item">';
+                    $html .= '<div><span class="tgcb-course-name">' . esc_html($course_title) . '</span></div>';
+                    $html .= '</li>';
+                }
+            }
+            $html .= '</ul>';
+        }
+
+        $html .= '</div>';
+
+        wp_send_json_success(array('html' => $html));
     }
 }
