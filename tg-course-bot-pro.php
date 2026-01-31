@@ -3,7 +3,7 @@
  * Plugin Name: TG Course Bot PRO
  * Plugin URI: https://example.com/tg-course-bot-pro
  * Description: Professional Telegram bot for managing course access with payment verification, invite links, and anti-piracy protection
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Your Name
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TGCB_VERSION', '1.0.2');
+define('TGCB_VERSION', '1.0.3');
 define('TGCB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TGCB_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TGCB_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -26,9 +26,9 @@ define('TGCB_PLUGIN_BASENAME', plugin_basename(__FILE__));
 $puc_path = TGCB_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
 if (file_exists($puc_path)) {
     require $puc_path;
-    use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-    $myUpdateChecker = PucFactory::buildUpdateChecker(
+    // Initialize update checker
+    $myUpdateChecker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
         'https://github.com/NickMkrtchyan/tg-custom/',
         __FILE__,
         'tg-custom'
@@ -42,6 +42,7 @@ if (file_exists($puc_path)) {
         $myUpdateChecker->setAuthentication(TGCB_GITHUB_TOKEN);
     }
 }
+
 
 // Main Plugin Class
 class TG_Course_Bot_Pro
