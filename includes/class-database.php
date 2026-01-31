@@ -77,6 +77,14 @@ class TGCB_Database
     }
 
     /**
+     * Alias for get_student_by_tg_id
+     */
+    public static function get_student($tg_id)
+    {
+        return self::get_student_by_tg_id($tg_id);
+    }
+
+    /**
      * Update student language
      */
     public static function update_student_language($tg_id, $language)

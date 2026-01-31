@@ -205,6 +205,46 @@
             });
         });
 
+        // Kick from Channel
+        $(document).on('click', '.tgcb-kick-from-channel', function (e) {
+            e.preventDefault();
+
+            if (!confirm('⚠️ Remove this user from the channel?\n\nThis will kick them from the Telegram channel and remove their access.')) {
+                return;
+            }
+
+            const tgId = $(this).data('tg-id');
+            const courseId = $(this).data('course-id');
+            const btn = $(this);
+            const originalHtml = btn.html();
+
+            btn.prop('disabled', true).html('<span class="tgcb-loading"></span>');
+
+            $.ajax({
+                url: tgcbAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'tgcb_kick_from_channel',
+                    nonce: tgcbAdmin.nonce,
+                    tg_id: tgId,
+                    course_id: courseId
+                },
+                success: function (response) {
+                    if (response.success) {
+                        alert('✅ ' + response.data);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + response.data);
+                        btn.prop('disabled', false).html(originalHtml);
+                    }
+                },
+                error: function () {
+                    alert('❌ Connection error');
+                    btn.prop('disabled', false).html(originalHtml);
+                }
+            });
+        });
+
     });
 
 })(jQuery);

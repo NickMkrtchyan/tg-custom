@@ -61,7 +61,9 @@ class TGCB_Students_Table extends WP_List_Table
     {
         return array(
             'ban' => __('Ban', 'tg-course-bot-pro'),
-            'unban' => __('Unban', 'tg-course-bot-pro')
+            'unban' => __('Unban', 'tg-course-bot-pro'),
+            'kick_all' => __('Remove from All Channels', 'tg-course-bot-pro'),
+            'delete' => __('Delete Records', 'tg-course-bot-pro')
         );
     }
 
@@ -116,12 +118,22 @@ class TGCB_Students_Table extends WP_List_Table
                 }
                 $buttons = array();
                 foreach ($courses as $course_id) {
+                    $course_title = get_the_title($course_id);
+                    // Resend invite button
                     $buttons[] = sprintf(
                         '<button type="button" class="button button-small tgcb-resend-invite" data-tg-id="%s" data-course-id="%d" title="%s - %s"><span class="dashicons dashicons-email-alt" style="vertical-align: middle;"></span></button>',
                         esc_attr($item->tg_id),
                         $course_id,
                         __('Resend Invite for', 'tg-course-bot-pro'),
-                        esc_attr(get_the_title($course_id))
+                        esc_attr($course_title)
+                    );
+                    // Kick from channel button
+                    $buttons[] = sprintf(
+                        '<button type="button" class="button button-small tgcb-kick-from-channel" data-tg-id="%s" data-course-id="%d" title="%s - %s" style="color: #d63638;"><span class="dashicons dashicons-trash" style="vertical-align: middle;"></span></button>',
+                        esc_attr($item->tg_id),
+                        $course_id,
+                        __('Remove from', 'tg-course-bot-pro'),
+                        esc_attr($course_title)
                     );
                 }
                 return implode('&nbsp;', $buttons);
@@ -200,6 +212,38 @@ class TGCB_Students_Table extends WP_List_Table
                 );
             }
             echo '<div class="notice notice-success"><p>' . __('Students unbanned successfully', 'tg-course-bot-pro') . '</p></div>';
+        } elseif ($action === 'kick_all') {
+            $telegram = new TGCB_Telegram_API();
+            $kicked_count = 0;
+            foreach ($students as $tg_id) {
+                $student = TGCB_Database::get_student($tg_id);
+                if ($student && $student->courses) {
+                    $courses = json_decode($student->courses, true);
+                    foreach ($courses as $course_id) {
+                        $channel_id = get_post_meta($course_id, '_tgcb_channel_id', true);
+                        if ($channel_id) {
+                            $telegram->kick_chat_member($channel_id, $tg_id);
+                        }
+                    }
+                    // Clear courses from database
+                    global $wpdb;
+                    $table_name = $wpdb->prefix . 'tgcb_students';
+                    $wpdb->update(
+                        $table_name,
+                        array('courses' => json_encode(array())),
+                        array('tg_id' => $tg_id)
+                    );
+                    $kicked_count++;
+                }
+            }
+            echo '<div class="notice notice-success"><p>' . sprintf(__('Removed %d students from all channels', 'tg-course-bot-pro'), $kicked_count) . '</p></div>';
+        } elseif ($action === 'delete') {
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'tgcb_students';
+            foreach ($students as $tg_id) {
+                $wpdb->delete($table_name, array('tg_id' => $tg_id));
+            }
+            echo '<div class="notice notice-success"><p>' . sprintf(__('Deleted %d student records', 'tg-course-bot-pro'), count($students)) . '</p></div>';
         }
     }
 }

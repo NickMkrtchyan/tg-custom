@@ -30,6 +30,7 @@ class TGCB_Webhook_Handler
         add_action('wp_ajax_tgcb_approve_payment', array($this, 'ajax_approve_payment'));
         add_action('wp_ajax_tgcb_reject_payment', array($this, 'ajax_reject_payment'));
         add_action('wp_ajax_tgcb_resend_invite', array($this, 'ajax_resend_invite'));
+        add_action('wp_ajax_tgcb_kick_from_channel', array($this, 'ajax_kick_from_channel'));
     }
 
     /**
@@ -612,5 +613,58 @@ class TGCB_Webhook_Handler
         } else {
             wp_send_json_error('Failed to create invite link');
         }
+    }
+
+    /**
+     * AJAX handler: Kick user from channel
+     */
+    public function ajax_kick_from_channel()
+    {
+        check_ajax_referer('tgcb_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $tg_id = sanitize_text_field($_POST['tg_id'] ?? '');
+        $course_id = intval($_POST['course_id'] ?? 0);
+
+        if (!$tg_id || !$course_id) {
+            wp_send_json_error('Missing parameters');
+        }
+
+        // Get channel ID
+        $channel_id = get_post_meta($course_id, '_tgcb_channel_id', true);
+
+        if (!$channel_id) {
+            wp_send_json_error('Channel ID not found for this course');
+        }
+
+        // Kick user from Telegram channel
+        $telegram = new TGCB_Telegram_API();
+        $kick_result = $telegram->kick_chat_member($channel_id, $tg_id);
+
+        if (!$kick_result) {
+            wp_send_json_error('Failed to kick user from Telegram channel');
+        }
+
+        // Remove course from student's courses in database
+        $student = TGCB_Database::get_student($tg_id);
+
+        if ($student && $student->courses) {
+            $courses = json_decode($student->courses, true);
+            $courses = array_values(array_diff($courses, [$course_id])); // Remove course_id
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'tgcb_students';
+            $wpdb->update(
+                $table_name,
+                array('courses' => json_encode($courses)),
+                array('tg_id' => $tg_id)
+            );
+        }
+
+        $course_title = get_the_title($course_id);
+        wp_send_json_success(sprintf('User removed from "%s"', $course_title));
     }
 }

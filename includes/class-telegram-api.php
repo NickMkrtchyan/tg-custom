@@ -119,6 +119,37 @@ class TGCB_Telegram_API
     }
 
     /**
+     * Unban chat member
+     */
+    public function unban_chat_member($chat_id, $user_id, $only_if_banned = true)
+    {
+        $data = array(
+            'chat_id' => $chat_id,
+            'user_id' => $user_id,
+            'only_if_banned' => $only_if_banned
+        );
+
+        return $this->make_request('unbanChatMember', $data);
+    }
+
+    /**
+     * Kick chat member (ban then immediately unban)
+     * This removes the user from the channel without permanently banning them
+     */
+    public function kick_chat_member($chat_id, $user_id)
+    {
+        // First ban the user
+        $ban_result = $this->ban_chat_member($chat_id, $user_id);
+
+        if (!$ban_result) {
+            return false;
+        }
+
+        // Then immediately unban them (they won't be able to rejoin without a new invite)
+        return $this->unban_chat_member($chat_id, $user_id, false);
+    }
+
+    /**
      * Delete message
      */
     public function delete_message($chat_id, $message_id)

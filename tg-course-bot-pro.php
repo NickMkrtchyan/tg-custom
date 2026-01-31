@@ -3,7 +3,7 @@
  * Plugin Name: TG Course Bot PRO
  * Plugin URI: https://github.com/NickMkrtchyan/tg-custom
  * Description: Professional Telegram bot for managing course access with payment verification, invite links, and anti-piracy protection
- * Version: 1.0.7
+ * Version: 1.1.0
  * Author: Nick Mkrtchyan
  * Author URI: https://github.com/NickMkrtchyan
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TGCB_VERSION', '1.0.7');
+define('TGCB_VERSION', '1.1.0');
 define('TGCB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TGCB_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TGCB_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -104,6 +104,7 @@ class TG_Course_Bot_Pro
 
         add_action('plugins_loaded', array($this, 'init'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
+        add_filter('plugin_action_links_' . TGCB_PLUGIN_BASENAME, array($this, 'add_action_links'));
     }
 
     /**
@@ -170,6 +171,16 @@ class TG_Course_Bot_Pro
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('tgcb_admin_nonce')
         ));
+    }
+
+    /**
+     * Add custom action links to plugin page
+     */
+    public function add_action_links($links)
+    {
+        $check_updates_link = '<a href="' . admin_url('plugins.php?plugin_status=upgrade') . '">' . __('Check for updates', 'tg-course-bot-pro') . '</a>';
+        array_unshift($links, $check_updates_link);
+        return $links;
     }
 }
 
