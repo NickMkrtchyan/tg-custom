@@ -80,6 +80,11 @@ class TGCB_Localization_Page
      */
     public function sanitize_telegram_html($value)
     {
+        // Debug logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('TGCB Localization - Before sanitize: ' . $value);
+        }
+
         // Allow only Telegram-supported HTML tags: b, i, u, s, code, pre, a
         $allowed_tags = array(
             'b' => array(),
@@ -91,7 +96,15 @@ class TGCB_Localization_Page
             'a' => array('href' => array())
         );
 
-        return wp_kses($value, $allowed_tags);
+        $sanitized = wp_kses($value, $allowed_tags);
+
+        // Debug logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('TGCB Localization - After sanitize: ' . $sanitized);
+            error_log('TGCB Localization - Value changed: ' . ($value !== $sanitized ? 'YES' : 'NO'));
+        }
+
+        return $sanitized;
     }
 
     public function render_page()
