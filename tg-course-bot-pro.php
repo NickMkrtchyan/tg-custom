@@ -1,0 +1,162 @@
+<?php
+/**
+ * Plugin Name: TG Course Bot PRO
+ * Plugin URI: https://example.com/tg-course-bot-pro
+ * Description: Professional Telegram bot for managing course access with payment verification, invite links, and anti-piracy protection
+ * Version: 1.0.0
+ * Author: Your Name
+ * Author URI: https://example.com
+ * License: GPL v2 or later
+ * Text Domain: tg-course-bot-pro
+ * Domain Path: /languages
+ */
+
+// Test for push
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Define plugin constants
+define('TGCB_VERSION', '1.0.0');
+define('TGCB_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('TGCB_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('TGCB_PLUGIN_BASENAME', plugin_basename(__FILE__));
+
+// Main Plugin Class
+class TG_Course_Bot_Pro
+{
+
+    private static $instance = null;
+
+    /**
+     * Get singleton instance
+     */
+    public static function get_instance()
+    {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Constructor
+     */
+    private function __construct()
+    {
+        $this->includes();
+        $this->init_hooks();
+    }
+
+    /**
+     * Include required files
+     */
+    private function includes()
+    {
+        // Core classes
+        require_once TGCB_PLUGIN_DIR . 'includes/class-database.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-telegram-api.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-webhook-handler.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-invite-manager.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-welcome-handler.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-anti-piracy.php';
+
+        // Custom Post Types
+        require_once TGCB_PLUGIN_DIR . 'includes/class-cpt-courses.php';
+        require_once TGCB_PLUGIN_DIR . 'includes/class-cpt-payments.php';
+
+        // Admin classes
+        require_once TGCB_PLUGIN_DIR . 'admin/class-admin-menu.php';
+        require_once TGCB_PLUGIN_DIR . 'admin/class-bot-settings.php';
+        require_once TGCB_PLUGIN_DIR . 'admin/class-students-table.php';
+        require_once TGCB_PLUGIN_DIR . 'admin/class-localization-page.php';
+    }
+
+    /**
+     * Initialize hooks
+     */
+    private function init_hooks()
+    {
+        register_activation_hook(__FILE__, array($this, 'activate'));
+        register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+
+        add_action('plugins_loaded', array($this, 'init'));
+        add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
+    }
+
+    /**
+     * Plugin activation
+     */
+    public function activate()
+    {
+        TGCB_Database::create_tables();
+        TGCB_CPT_Courses::register();
+        TGCB_CPT_Payments::register();
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Plugin deactivation
+     */
+    public function deactivate()
+    {
+        flush_rewrite_rules();
+    }
+
+    /**
+     * Initialize plugin
+     */
+    public function init()
+    {
+        // Load text domain
+        load_plugin_textdomain('tg-course-bot-pro', false, dirname(TGCB_PLUGIN_BASENAME) . '/languages');
+
+        // Self-healing: Check if piracy table exists and create if missing
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'tgcb_piracy_log';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            TGCB_Database::create_tables();
+        }
+
+        // Initialize components
+        TGCB_CPT_Courses::get_instance();
+        TGCB_CPT_Payments::get_instance();
+        TGCB_Webhook_Handler::get_instance();
+        TGCB_Admin_Menu::get_instance();
+        TGCB_Localization_Page::get_instance();
+    }
+
+    /**
+     * Enqueue admin scripts and styles
+     */
+    public function admin_scripts($hook)
+    {
+        $screen = get_current_screen();
+
+        // Check if we are on our plugin pages OR our custom post types
+        $is_plugin_page = strpos($hook, 'tg-course-bot') !== false;
+        $is_cpt_page = isset($screen->post_type) && in_array($screen->post_type, array('tgcb_payment', 'tgcb_course'));
+
+        if (!$is_plugin_page && !$is_cpt_page) {
+            return;
+        }
+
+        wp_enqueue_style('tgcb-admin-style', TGCB_PLUGIN_URL . 'assets/css/admin-style.css', array(), TGCB_VERSION);
+        wp_enqueue_script('tgcb-admin-script', TGCB_PLUGIN_URL . 'assets/js/admin-script.js', array('jquery'), TGCB_VERSION, true);
+
+        wp_localize_script('tgcb-admin-script', 'tgcbAdmin', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('tgcb_admin_nonce')
+        ));
+    }
+}
+
+// Initialize plugin
+function tgcb_init()
+{
+    return TG_Course_Bot_Pro::get_instance();
+}
+
+// Start the plugin
+tgcb_init();
