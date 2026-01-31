@@ -69,10 +69,29 @@ class TGCB_Localization_Page
         foreach ($settings as $setting) {
             register_setting('tgcb_localization_group', $setting, array(
                 'type' => 'string',
-                'sanitize_callback' => 'wp_kses_post',
+                'sanitize_callback' => array($this, 'sanitize_telegram_html'),
                 'default' => ''
             ));
         }
+    }
+
+    /**
+     * Sanitize callback that allows Telegram HTML tags
+     */
+    public function sanitize_telegram_html($value)
+    {
+        // Allow only Telegram-supported HTML tags: b, i, u, s, code, pre, a
+        $allowed_tags = array(
+            'b' => array(),
+            'i' => array(),
+            'u' => array(),
+            's' => array(),
+            'code' => array(),
+            'pre' => array(),
+            'a' => array('href' => array())
+        );
+
+        return wp_kses($value, $allowed_tags);
     }
 
     public function render_page()

@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('TGCB_VERSION', '1.1.0');
+define('TGCB_VERSION', '1.1.1');
 define('TGCB_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TGCB_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TGCB_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -178,7 +178,9 @@ class TG_Course_Bot_Pro
      */
     public function add_action_links($links)
     {
-        $check_updates_link = '<a href="' . admin_url('plugins.php?plugin_status=upgrade') . '">' . __('Check for updates', 'tg-course-bot-pro') . '</a>';
+        $check_updates_url = admin_url('plugins.php?puc_check_for_updates=1&puc_slug=tg-custom');
+        $check_updates_url = wp_nonce_url($check_updates_url, 'puc_check_for_updates');
+        $check_updates_link = '<a href="' . esc_url($check_updates_url) . '">' . __('Check for updates', 'tg-course-bot-pro') . '</a>';
         array_unshift($links, $check_updates_link);
         return $links;
     }
