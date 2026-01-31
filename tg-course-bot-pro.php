@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: TG Course Bot PRO
- * Plugin URI: https://example.com/tg-course-bot-pro
+ * Plugin URI: https://github.com/NickMkrtchyan/tg-custom
  * Description: Professional Telegram bot for managing course access with payment verification, invite links, and anti-piracy protection
  * Version: 1.0.5
- * Author: Your Name
- * Author URI: https://example.com
+ * Author: Nick Mkrtchyan
+ * Author URI: https://github.com/NickMkrtchyan
  * License: GPL v2 or later
  * Text Domain: tg-course-bot-pro
  * Domain Path: /languages
