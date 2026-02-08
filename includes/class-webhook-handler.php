@@ -451,13 +451,28 @@ class TGCB_Webhook_Handler
 
             $this->telegram->send_message($tg_id, $message);
 
-            // Update admin
             $this->telegram->answer_callback_query($callback->id, '✅ Approved!', true);
-            $this->telegram->edit_message_text(
-                $callback->message->chat->id,
-                $callback->message->message_id,
-                $callback->message->text . "\n\n✅ <b>APPROVED</b>"
-            );
+
+            // Update admin message
+            $admin_id = $callback->message->chat->id;
+            $message_id = $callback->message->message_id;
+            $timestamp = date('d.m.Y H:i');
+
+            $status_text = "\n\n✅ <b>APPROVED</b> by Admin at {$timestamp}";
+
+            // If message has photo, edit caption
+            if (isset($callback->message->photo)) {
+                $caption = isset($callback->message->caption) ? $callback->message->caption : '';
+                if (strpos($caption, '✅ APPROVED') === false) {
+                    $this->telegram->edit_message_caption($admin_id, $message_id, $caption . $status_text);
+                }
+            } else {
+                // Edit text message
+                $text = isset($callback->message->text) ? $callback->message->text : '';
+                if (strpos($text, '✅ APPROVED') === false) {
+                    $this->telegram->edit_message_text($admin_id, $message_id, $text . $status_text);
+                }
+            }
         } else {
             $this->telegram->answer_callback_query($callback->id, '❌ Failed to create invite link', true);
         }
@@ -478,12 +493,24 @@ class TGCB_Webhook_Handler
         $this->telegram->send_message($tg_id, $message);
 
         // Update admin
-        $this->telegram->answer_callback_query($callback->id, '❌ Rejected', true);
-        $this->telegram->edit_message_text(
-            $callback->message->chat->id,
-            $callback->message->message_id,
-            $callback->message->text . "\n\n❌ <b>REJECTED</b>"
-        );
+        $admin_id = $callback->message->chat->id;
+        $message_id = $callback->message->message_id;
+        $timestamp = date('d.m.Y H:i');
+        $status_text = "\n\n❌ <b>REJECTED</b> by Admin at {$timestamp}";
+
+        if (isset($callback->message->photo)) {
+            $caption = isset($callback->message->caption) ? $callback->message->caption : '';
+            if (strpos($caption, '❌ REJECTED') === false) {
+                $this->telegram->edit_message_caption($admin_id, $message_id, $caption . $status_text);
+            }
+        } else {
+            $text = isset($callback->message->text) ? $callback->message->text : '';
+            if (strpos($text, '❌ REJECTED') === false) {
+                $this->telegram->edit_message_text($admin_id, $message_id, $text . $status_text);
+            }
+        }
+
+        $this->telegram->answer_callback_query($callback->id, 'Rejected');
     }
 
     /**
@@ -535,44 +562,44 @@ class TGCB_Webhook_Handler
             TGCB_Database::add_course_to_student($tg_id, $course_id);
 
             // Send invite to student
-            $telegram = new TGCB_Telegram_API();
             $course_title = get_the_title($course_id);
 
             $message = get_option('tgcb_msg_approved', "✅ <b>Оплата подтверждена!</b>\n\nВаш доступ к <b>{course}</b> открыт.\n\nНажмите на ссылку ниже, чтобы вступить:\n{link}\n\n⚠️ Эта ссылка одноразовая и действует 24 часа.");
             $message = str_replace(array('{course}', '{link}'), array($course_title, $invite_link), $message);
 
+            $telegram = new TGCB_Telegram_API();
             $telegram->send_message($tg_id, $message);
-
             wp_send_json_success('Payment approved and invite sent!');
+            return;
+            $timestamp = date('d.m.Y H:i');
+
+            $status_text = "\n\n✅ <b>APPROVED</b> by Admin at {$timestamp}";
+
+            // If message has photo, edit caption
+            if (isset($callback->message->photo)) {
+                $caption = isset($callback->message->caption) ? $callback->message->caption : '';
+                if (strpos($caption, '✅ APPROVED') === false) {
+                    $this->telegram->edit_message_caption($admin_id, $message_id, $caption . $status_text);
+                }
+            } else {
+                // Edit text message
+                $text = isset($callback->message->text) ? $callback->message->text : '';
+                if (strpos($text, '✅ APPROVED') === false) {
+                    $this->telegram->edit_message_text($admin_id, $message_id, $text . $status_text);
+                }
+            }
+
+            $this->telegram->answer_callback_query($callback->id, 'Payment approved!');
+
         } else {
-            wp_send_json_error('Failed to create invite link');
+            $this->telegram->answer_callback_query($callback->id, 'Failed to create invite link', true);
         }
     }
 
     /**
      * AJAX: Reject payment from WordPress admin
      */
-    public function ajax_reject_payment()
-    {
-        check_ajax_referer('tgcb_admin_nonce', 'nonce');
 
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        $payment_id = intval($_POST['payment_id']);
-        $tg_id = get_post_meta($payment_id, '_tgcb_tg_id', true);
-
-        update_post_meta($payment_id, '_tgcb_status', 'rejected');
-
-        // Notify student
-        $telegram = new TGCB_Telegram_API();
-        $message = get_option('tgcb_msg_rejected', "❌ <b>Оплата отклонена</b>\n\nК сожалению, ваш платеж не подтвержден.\nПожалуйста, свяжитесь с поддержкой.");
-
-        $telegram->send_message($tg_id, $message);
-
-        wp_send_json_success('Payment rejected');
-    }
 
     /**
      * AJAX: Resend invite link

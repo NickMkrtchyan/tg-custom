@@ -196,6 +196,42 @@ class TGCB_Telegram_API
     }
 
     /**
+     * Edit message caption (for photos/videos)
+     */
+    public function edit_message_caption($chat_id, $message_id, $caption, $reply_markup = null)
+    {
+        $data = array(
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'caption' => $caption,
+            'parse_mode' => 'HTML'
+        );
+
+        if ($reply_markup) {
+            $data['reply_markup'] = json_encode($reply_markup);
+        }
+
+        return $this->make_request('editMessageCaption', $data);
+    }
+
+    /**
+     * Edit message reply markup (buttons only)
+     */
+    public function edit_message_reply_markup($chat_id, $message_id, $reply_markup = null)
+    {
+        $data = array(
+            'chat_id' => $chat_id,
+            'message_id' => $message_id
+        );
+
+        if ($reply_markup) {
+            $data['reply_markup'] = json_encode($reply_markup);
+        }
+
+        return $this->make_request('editMessageReplyMarkup', $data);
+    }
+
+    /**
      * Set webhook
      */
     public function set_webhook($url)
